@@ -163,7 +163,14 @@ for file in $(find ../src -name *.c -o -name *.cpp); do
 done
 
 OBJ_LIST=$(find $WORKING_DIR/build -name "*.o" -printf "%p ")
-$COMPILER $COMPILER_FLAGS $OBJ_LIST -o $BIN_NAME $INCLUDE_CMD $LIB_CMD -lglfw3 -lm -lGL
+
+PLATFORM_EXTRA_LIB_FLAGS=
+if [[ "$PLATFORM" == *_NT* ]]; then
+       PLATFORM_EXTRA_LIB_FLAGS="-lopengl32 -lgdi32 -lkernel32"
+else
+       PLATFORM_EXTRA_LIB_FLAGS="-lGL"
+fi
+$COMPILER $COMPILER_FLAGS $OBJ_LIST -o $BIN_NAME $INCLUDE_CMD $LIB_CMD -lglfw3 -lm  $PLATFORM_EXTRA_LIB_FLAGS
 popd > /dev/null 2>&1
 
 RUNTIME=$(( $(date +%s) - $BEGIN ))
