@@ -141,8 +141,9 @@ if [ ! -z "$SHOULD_BUILD_DEPS" ]; then
 	OBJ_LIST=$(find -name "*.o" -printf "%p ")
 	$AR_PATH cr libglfw3.a $OBJ_LIST
 
-	cp $WORKING_DIR/$GLFW_FOLDER/build/libglfw3.* $LIBS_FOLDER
-	cp -r $WORKING_DIR/$GLFW_FOLDER/include/GLFW $INCLUDE_FOLDER
+	mkdir -p $LIBS_FOLDER
+	cp $WORKING_DIR/$GLFW_FOLDER/build/libglfw3.* $LIBS_FOLDER/
+	cp -r $WORKING_DIR/$GLFW_FOLDER/include/GLFW $INCLUDE_FOLDER/
 	echo "[INFO]: Done..."
 	popd > /dev/null 2>&1 
 fi
