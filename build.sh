@@ -10,16 +10,20 @@ LIBS_FOLDER=$WORKING_DIR/libs
 SRC_FOLDER=$WORKING_DIR/src
 INCLUDE_FOLDER=$WORKING_DIR/include
 COMPILER=
-PLATFORM=$(uname -a)
 ARCH=$(uname -m)
 INCLUDE_CMD="-I""$INCLUDE_FOLDER"
 LIB_CMD="-L""$LIBS_FOLDER"
 COMPILER_FLAGS="-Wno-write-strings"
 BIN_NAME=blight
+PLATFORM=
+AR_PATH=
 
 BEGIN=$(date +%s)
 while getopts 'C:chd' opt; do
   case "$opt" in
+     p)
+	     PLATFORM="$OPTARG"
+	     ;;
      d)
 	    SHOULD_BUILD_DEPS="yes"
 	    ;;
@@ -48,6 +52,11 @@ TARGET="$1"
 	return 0
 }
 
+if [ -z "$PLATFORM" ]; then
+	PLATFORM=$(uname -a | cut -d " " -f 1)
+fi
+
+echo "Platform: " $PLATFORM
 echo Working directory: $WORKING_DIR
 
 if [ -z "$COMPILER" ]; then
@@ -82,37 +91,61 @@ if [ -z "$COMPILER" ]; then
 	fi	
 fi
 
+if [ -z "$AR_PATH" ]; then
+	echo -n "Searching for ar..."
+	AR_PATH=$(searchBinary "ar")
+	if [ "$?" != 0 ]; then
+		echo "Not found."
+	else 
+		echo "ar found."
+	fi
+fi
+
 if [[ ! "$WORKING_DIR" == *blight* ]]; then
 	echo "[ERROR]: Wrong folder... Leaving"
 	exit
 fi
 
 if [ ! -z "$SHOULD_BUILD_DEPS" ]; then
-	if [ -z "$CMAKE_BIN" ]; then
-		echo -n "Searching for cmake..."
-		CMAKE_BIN=$(which cmake | cut -d " " -f 2)
+	WINDOW_API=
+	CONTEXT_API=
+	if [[ "$PLATFORM" == *_NT* ]]; then
+		WINDOW_API="WIN32"
+		CONTEXT_API="WGL"
+	elif [[ "$PLATFORM" == *Linux* ]]; then
+		WINDOW_API="X11"
+		CONTEXT_API="GLX"
+	else
+	       	WINDOW_API="COCOA"
+		CONTEXT_API="NSGL"	
+	fi
+	
+	if [ -z "$WINDOW_API" ] || [ -z "$CONTEXT_API" ]; then
+		echo "[ERROR]: Unknown platform"
+		exit
 	fi
 
-	if [ -z "$CMAKE_BIN" ]; then
-		echo "cmake not found"
-		echo "[ERROR]: Could not found cmake"
+	if [ -z "$AR_PATH" ]; then
+		echo "[ERROR]: Need ar to build glfw, leaving..."
 		exit
-	else 
-		echo "cmake found"
 	fi
 
 	echo "[INFO]: Building glfw..."
 	sleep 1
 	mkdir -p $WORKING_DIR/$GLFW_FOLDER/build
 	pushd $WORKING_DIR/$GLFW_FOLDER/build > /dev/null 2>&1
-	$CMAKE_BIN -DCMAKE_BUILD_TYPE=Release -S .. -B . 
-	$CMAKE_BIN --build .
-	cp $WORKING_DIR/$GLFW_FOLDER/build/src/libglfw3.* $LIBS_FOLDER
+	for file in $(find ../src -name "*.c" -o -name "*.cpp"); do
+		$COMPILER -D_GLFW_$WINDOW_API -D_GLFW_$CONTEXT_API -D_GLFW_USE_OPENGL $file -o $(basename ${file%.*}).o -c 
+	done
+
+	OBJ_LIST=$(find -name "*.o" -printf "%p ")
+	$AR_PATH cr libglfw3.a $OBJ_LIST
+
+	cp $WORKING_DIR/$GLFW_FOLDER/build/libglfw3.* $LIBS_FOLDER
 	cp -r $WORKING_DIR/$GLFW_FOLDER/include/GLFW $INCLUDE_FOLDER
 	echo "[INFO]: Done..."
 	popd > /dev/null 2>&1 
 fi
-
 
 if [ ! -z "$SHOULD_CLEAN" ]; then
 	echo "[INFO]: Removing build folder"
