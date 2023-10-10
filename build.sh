@@ -1,6 +1,5 @@
 #!/bin/bash
 
-CMAKE_BIN=
 WORKING_DIR=$PWD
 GLFW_FOLDER="deps/glfw"
 SHOULD_CLEAN=
@@ -36,9 +35,10 @@ while getopts 'C:chd' opt; do
 	     ;;
     h)
       echo "Usage: $(basename $0) "
-      echo "-d				Also compile dependencies"
-      echo "-c				Remove build folder before compiling"
-      echo "-C  <compiler-fullpath>	Uses the compiler provided by the fullpath"
+      echo "-p				Set platform manually."
+      echo "-d				Also compile dependencies."
+      echo "-c				Remove build folder before compiling."
+      echo "-C  <compiler-fullpath>	Uses the compiler provided by the fullpath."
       exit 1
       ;;
   esac
