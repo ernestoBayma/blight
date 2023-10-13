@@ -1,6 +1,10 @@
-#include <stdio.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#include <stdio.h>
+#include <math.h>
+
+#include <Shader.h>
 
 #define GLFW_RESIZE_CALLBACK(name) void name(GLFWwindow* window, int width, int height)
 GLFW_RESIZE_CALLBACK(framebuffer_resize_callback) {
@@ -8,21 +12,22 @@ GLFW_RESIZE_CALLBACK(framebuffer_resize_callback) {
 }
 
 static float vertices[] = {
-	 -0.5f, -0.5f, 0.0f, // left
-	  0.5,  -0.5f, 0.0f, // right
-	  0.0,   0.5f, 0.0f  // top
+	  // positions ( left, right, top )  // colors
+	 -0.5f, -0.5f, 0.0f, 		     1.0f, 0.0f , 0.0f, // bottom right
+	  0.5,  -0.5f, 0.0f, 		     0.0f, 1.0f , 0.0f, // bottom left
+	  0.0,   0.5f, 0.0f,		     0.0f, 0.0f , 1.0f  // top
 };
 
-#define SHADER_CODE(code)  "#version 330 core\n"#code
 
 void process_input(GLFWwindow *window);
 
 int main(int argc, char **argv) 
 {
 GLFWwindow 	*window;
-unsigned int 	VBO, VAO, vertex_shader, frag_shader, shader_program;
-char	  	*vertex_shader_src, *frag_shader_src, info_log[512];
-int		success;
+unsigned int 	VBO, VAO;
+char	  	*vertex_shader_src, *frag_shader_src;
+int		success, vertex_color_location;
+float		timeValue, greenValue;
 
 	if(!glfwInit()) return -1;
 
@@ -44,51 +49,11 @@ int		success;
 		return -1;
 	}
 
-	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-	vertex_shader_src = SHADER_CODE(
-		layout (location = 0) in vec3 aPos;
-		void main()
-		{
-			gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-		}
-	);
-	
-	glShaderSource(vertex_shader, 1, &vertex_shader_src, NULL);
-	glCompileShader(vertex_shader);
-	glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
-	if(!success) {
-		glGetShaderInfoLog(vertex_shader, sizeof(info_log), NULL, info_log);
-		fprintf(stderr, "Vertex compilation failed: %s\n", info_log);
-		glfwTerminate();
+	Blight::Shader shader_prog("shaders/shader.vs", "shaders/shader.fs");
+	if(shader_prog.error) {
+		fprintf(stderr, "Error creating shader program\n");
 		return -1;
 	}
-
-	frag_shader = glCreateShader(GL_FRAGMENT_SHADER);
-	frag_shader_src = SHADER_CODE(
-		out vec4 FragColor;
-		void main() 
-		{
-			FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-		}
-	);
-
-	glShaderSource(frag_shader, 1, &frag_shader_src, NULL);
-	glCompileShader(frag_shader);
-	glGetShaderiv(frag_shader, GL_COMPILE_STATUS, &success);
-	if(!success) {
-		glGetShaderInfoLog(frag_shader, sizeof(info_log), NULL, info_log);
-		fprintf(stderr, "Frag compilation failed: %s\n", info_log);
-		glfwTerminate();
-		return -1;
-	}
-
-	shader_program = glCreateProgram();
-	glAttachShader(shader_program, vertex_shader);
-	glAttachShader(shader_program, frag_shader);
-	glLinkProgram(shader_program);
-
-	glDeleteShader(vertex_shader);
-	glDeleteShader(frag_shader);
 
 	glGenBuffers(1, &VBO);
 	glGenVertexArrays(1, &VAO);
@@ -97,8 +62,11 @@ int		success;
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(float)));
+	glEnableVertexAttribArray(1);
 	
 	glBindBuffer(GL_ARRAY_BUFFER, 0);	
 	glBindVertexArray(0);
@@ -109,7 +77,8 @@ int		success;
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glUseProgram(shader_program);
+		shader_prog.use();
+
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 
@@ -119,7 +88,6 @@ int		success;
 
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
-	glDeleteProgram(shader_program);
 
 	glfwTerminate();
 	return 0;
