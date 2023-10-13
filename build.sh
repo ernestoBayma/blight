@@ -60,8 +60,8 @@ echo "Platform: " $PLATFORM
 echo Working directory: $WORKING_DIR
 
 if [ -z "$COMPILER" ]; then
-	echo -n "Searching for gcc..."
-	COMPILER=$(searchBinary "gcc")
+	echo -n "Searching for g++..."
+	COMPILER=$(searchBinary "g++")
 	if [ "$?" != 0 ]; then
 		echo "Not found."
 		echo -n "Searching for clang..."
@@ -87,7 +87,7 @@ if [ -z "$COMPILER" ]; then
 			echo "clang found."	
 		fi
 	else 
-		echo "gcc found."
+		echo "g++ found."
 	fi	
 fi
 
@@ -159,7 +159,7 @@ sleep 1
 mkdir -p $WORKING_DIR/build
 pushd $WORKING_DIR/build > /dev/null 2>&1
 for file in $(find ../src -name *.c -o -name *.cpp); do
-	$COMPILER $COMPILER_FLAGS $file -o $(basename ${file%.*}).o -c "$INCLUDE_CMD" "$LIB_CMD"
+	$COMPILER -DBLIGHT_WORKING_DIR='"$PWD"' $COMPILER_FLAGS $file -o $(basename ${file%.*}).o -c "$INCLUDE_CMD" "$LIB_CMD"
 done
 
 OBJ_LIST=$(find $WORKING_DIR/build -name "*.o" -printf "%p ")
@@ -168,9 +168,9 @@ PLATFORM_EXTRA_LIB_FLAGS=
 if [[ "$PLATFORM" == *_NT* ]]; then
        PLATFORM_EXTRA_LIB_FLAGS="-lopengl32 -lgdi32 -lkernel32"
 else
-       PLATFORM_EXTRA_LIB_FLAGS="-lGL"
+       PLATFORM_EXTRA_LIB_FLAGS="-lGL -std=c++17" 
 fi
-$COMPILER $COMPILER_FLAGS $OBJ_LIST -o $BIN_NAME $INCLUDE_CMD $LIB_CMD -lglfw3 -lm  $PLATFORM_EXTRA_LIB_FLAGS
+$COMPILER -DBLIGHT_WORKING_DIR='"$PWD"' $COMPILER_FLAGS $OBJ_LIST -o $BIN_NAME $INCLUDE_CMD $LIB_CMD -lglfw3 -lm  $PLATFORM_EXTRA_LIB_FLAGS
 popd > /dev/null 2>&1
 
 RUNTIME=$(( $(date +%s) - $BEGIN ))
