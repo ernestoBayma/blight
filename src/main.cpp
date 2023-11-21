@@ -1,5 +1,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <stdio.h>
 #include <math.h>
@@ -61,6 +64,7 @@ unsigned char   *data = NULL;
 		return -1;
 	}
 
+
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
@@ -106,6 +110,8 @@ unsigned char   *data = NULL;
 	shader_prog.use();
 	shader_prog.setUniformInt("texture1", 0);
 
+	
+
 	while(!glfwWindowShouldClose(window)) {
 		process_input(window);
 		
@@ -116,7 +122,24 @@ unsigned char   *data = NULL;
 		glBindTexture(GL_TEXTURE_2D, texture);
 
 		shader_prog.use();
+
+		glm::mat4 trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+		trans = glm::rotate(trans, static_cast<float>(glfwGetTime()), glm::vec3(0.0f, 0.0f, 1.0f));
+		
+		unsigned int transformLocation = glGetUniformLocation(shader_prog.id, "transform");
+		glUniformMatrix4fv(transformLocation, 1, GL_FALSE, glm::value_ptr(trans));
+
 		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+
+		trans = glm::mat4(1.0f);
+		trans = glm::translate(trans, glm::vec3(-0.5f, -0.5f, 0.0f));
+		float scale_amount = static_cast<float>(sin((2*glm::pi<float>()* 0.5) * glfwGetTime()));
+		trans = glm::scale(trans, glm::vec3(scale_amount, scale_amount, scale_amount));
+		glUniformMatrix4fv(transformLocation, 1, GL_FALSE, &trans[0][0]);
+
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		glfwSwapBuffers(window);
