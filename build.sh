@@ -130,12 +130,55 @@ if [ ! -z "$SHOULD_BUILD_DEPS" ]; then
 		exit
 	fi
 
+	echo "[INFO]: Searching for C compiler"
+	C_COMPILER=
+	if [ -z "$C_COMPILER" ]; then
+		echo -n "Searching for gcc..."
+		C_COMPILER=$(searchBinary "gcc")
+		if [ "$?" != 0 ]; then
+			echo "Not found."
+			echo -n "Searching for clang..."
+			C_COMPILER=$(searchBinary "clang")
+			if [ "$?" != 0 ]; then
+				echo "Not found."
+				echo -n "Searching for mingw..."
+				C_COMPILER=$(searchBinary "mingw")
+				if [ "$?" != 0]; then
+					echo "Not found."
+					echo -n "Searching for Visual Studio compiler..."
+					PATH=
+					for partition in $(dl -l | cut -d " " -f 1); do 
+						PATH=$(find $partition -name cl.exe)
+						if [ ! -z $PATH ]; then break; fi
+					done
+
+					if [ -z "$PATH" ]; then echo "Visual Studio compiler not found..."; fi
+					C_COMPILER="$PATH"
+					echo "cl found."
+				else 
+					echo "mingw found."
+				fi
+			else 
+				echo "clang found."	
+			fi
+		else 
+			echo "gcc found."
+		fi	
+	fi
+
+
+	if [ -z "$C_COMPILER" ]; then
+		echo "No C compiler found, could not build glfw..."
+		exit -1
+	fi
+
 	echo "[INFO]: Building glfw..."
+
 	sleep 1
 	mkdir -p $WORKING_DIR/$GLFW_FOLDER/build
 	pushd $WORKING_DIR/$GLFW_FOLDER/build > /dev/null 2>&1
-	for file in $(find ../src -name "*.c" -o -name "*.cpp"); do
-		$COMPILER -D_GLFW_$WINDOW_API -D_GLFW_$CONTEXT_API -D_GLFW_USE_OPENGL $file -o $(basename ${file%.*}).o -c 
+	for file in $(find ../src -name "*.c" ); do
+		$C_COMPILER -D_GLFW_$WINDOW_API -D_GLFW_$CONTEXT_API -D_GLFW_USE_OPENGL $file -o $(basename ${file%.*}).o -c 
 	done
 
 	OBJ_LIST=$(find -name "*.o" -printf "%p ")
