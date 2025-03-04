@@ -1,6 +1,8 @@
 #include <glad/glad.h>
 #include <string.h>
 #include <stdlib.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <fstream>
 #include <sstream>
@@ -22,7 +24,6 @@ static ShaderCompiledResult createAndCompileShader(const char **code, int shader
 Blight::Shader::Shader(char *vPath, char *fPath) 
 {
 using namespace std;
-
 std::string 		v_code, f_code;
 char			info_log[512];
 int			success;
@@ -85,6 +86,10 @@ void Blight::Shader::setUniformFloat(const std::string &name, float value) const
 	glUniform1f(glGetUniformLocation(this->id, name.c_str()), value);
 }
 
+void Blight::Shader::setUniformMat(const std::string &name, glm::mat4 mat) const
+{
+	glUniformMatrix4fv(glGetUniformLocation(this->id, name.c_str()), 1, GL_FALSE, glm::value_ptr(mat));
+}
 static ShaderCompiledResult createAndCompileShader(const char **code, int shaderType)
 {
 ShaderCompiledResult res = {};
@@ -121,7 +126,7 @@ stringstream	s_st;
 	
 	st.open(path);
 	if(st.good()) {
-		s_st << st.rdbuf(); // Copy to the stringstream
+		s_st << st.rdbuf(); 
 		st.close();
 		ret = s_st.str();
 	} else {
