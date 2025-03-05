@@ -2,8 +2,7 @@
 
 #include <string>
 #include <glm/glm.hpp>
-
-#define SHADER_CODE(code)  "#version 330 core\n"#code
+#include <BlightTypes.h>
 
 namespace Blight {
 	class Shader {
@@ -17,6 +16,7 @@ namespace Blight {
 		void setUniformInt(const std::string &name, int value) const;
 		void setUniformFloat(const std::string &name, float value) const;
 		void setUniformMat(const std::string &name, glm::mat4 mat) const;
+		void setUniformVec3(const std::string &name, f32 x, f32 y, f32 z) const;
+		void setUniformVec3(const std::string &name, glm::vec3 vec) const;
 	};
-// End namespace
-};
+}; // End namespace

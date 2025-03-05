@@ -9,9 +9,9 @@
 #include <iostream>
 #include <string>
 
+#include <BlightTypes.h>
 #include <Shader.h>
 
-typedef unsigned int u32;
 struct ShaderCompiledResult {
 	u32 id;
 	char *error;
@@ -84,6 +84,16 @@ void Blight::Shader::setUniformInt(const std::string &name, int value) const
 void Blight::Shader::setUniformFloat(const std::string &name, float value) const
 {
 	glUniform1f(glGetUniformLocation(this->id, name.c_str()), value);
+}
+
+void Blight::Shader::setUniformVec3(const std::string &name, f32 x, f32 y, f32 z) const
+{
+	glUniform3f(glGetUniformLocation(this->id, name.c_str()), x, y, z);
+}
+
+void Blight::Shader::setUniformVec3(const std::string &name, glm::vec3 vec) const
+{
+	glUniform3fv(glGetUniformLocation(this->id, name.c_str()), 1, glm::value_ptr(vec));
 }
 
 void Blight::Shader::setUniformMat(const std::string &name, glm::mat4 mat) const
