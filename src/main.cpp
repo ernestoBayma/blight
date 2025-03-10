@@ -20,6 +20,7 @@ static void process_input(GLFWwindow *window);
 static void framebuffer_resize_callback(GLFWwindow* window, s32 width, s32 height);
 static void mouse_callback(GLFWwindow* window, f64 xoffset, f64 yoffset);
 static void window_scroll_callback(GLFWwindow* window, f64 xoffset, f64 yoffset);
+static u32 loadTexture(const char *path);
 
 static u32 Window_Width;
 static u32 Window_Height;
@@ -35,6 +36,7 @@ static b32 firstMouse 		= true;
 static f32 Last_Time		= 0.0f;
 static f32 Delta_Time 		= 0.0f;
 
+#if 0
 static f32 vertices[] = {
     -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
      0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
@@ -78,12 +80,57 @@ static f32 vertices[] = {
     -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
     -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
 };
+#endif
+static f32 vertices[] = {
+    // positions          // normals           // texture coords
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+
+    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
+};
 
 int main(int argc, char **argv) 
 {
 GLFWwindow 	*window;
-u32 		VBO, cubeVAO, lightCubeVAO, texture;
-s32		success, width, height, channels;
+u32 		VBO, cubeVAO, lightCubeVAO, diffuseMap;
+s32		success;
 u8   		*data = NULL;
 
 	if(!glfwInit()) return -1;
@@ -115,7 +162,7 @@ u8   		*data = NULL;
 
 	glEnable(GL_DEPTH_TEST);
 
-	Blight::Shader lightingShader("shaders/colors.vs", "shaders/colors.fs");
+	Blight::Shader lightingShader("shaders/materials_texture.vs", "shaders/materials_texture.fs");
 	if(lightingShader.error) {
 		fprintf(stderr, "Error creating lightingShader\n");
 		return -1;
@@ -134,39 +181,35 @@ u8   		*data = NULL;
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glBindVertexArray(cubeVAO);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(f32), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(f32), (void*)(3 * sizeof(f32)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(3 * sizeof(f32)));
 	glEnableVertexAttribArray(1);
-#if 0
-	data = stbi_load("res/container.jpg", &width, &height, &channels, 0);
-	if(data == NULL) {
-		fprintf(stderr, "Failure to load image\n");
-		return -1;
-	}
 
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)(6 * sizeof(f32)));
+	glEnableVertexAttribArray(2);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	stbi_image_free(data);
-
-	shader_prog.use();
-	shader_prog.setUniformInt("texture1", 0);
-#endif
 	glGenVertexArrays(1, &lightCubeVAO);
 	glBindVertexArray(lightCubeVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(f32), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(f32), (void*)0);
 	glEnableVertexAttribArray(0);
+
+	diffuseMap = loadTexture("res/container2.png");
+	if(diffuseMap == -1) {
+		fprintf(stderr, "Failed to load texture [%d]\n", __LINE__);
+		return -1;
+	}
+	u32 specularMap = loadTexture("res/container2_specular.png");
+	if(specularMap  == -1) {
+		fprintf(stderr, "Failed to load texture [%d]\n", __LINE__);
+		return -1;
+	}
+	lightingShader.use();
+	lightingShader.setUniformInt("material.diffuse", 0);
+	lightingShader.setUniformInt("material.specular", 1);
 
 	f32 resolution = static_cast<f32>(Viewport_Width) / static_cast<f32>(Viewport_Height);
 
@@ -179,21 +222,30 @@ u8   		*data = NULL;
 		
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-#if 0
+
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture);
-#endif
+		glBindTexture(GL_TEXTURE_2D, diffuseMap);
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, specularMap);
+
+		glm::vec3 lightColor = glm::vec3(1.0f);
 
 		f32 lightAngle = currentFrame * 0.5f;
 		f32 lightX     = 5.0f * cos(lightAngle);
 		f32 lightZ     = 5.0f * sin(lightAngle);
 
 		glm::vec3 lightCurrentPosition = glm::vec3(lightX, 0.0f, lightZ);
-
 		lightingShader.use();
-		lightingShader.setUniformVec3("objectColor", 1.0f, 0.5f, 0.31f);
-		lightingShader.setUniformVec3("lightColor", 1.0f, 1.0f, 1.0f);
-		lightingShader.setUniformVec3("lightPos", lightCurrentPosition);
+		lightingShader.setUniformVec3("material.specular", 0.5f, 0.5f, 0.5f);
+		lightingShader.setUniformFloat("material.shininess", 54.0f);
+		lightingShader.setUniformVec3("lightColor", lightColor);
+
+		lightingShader.setUniformVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+		lightingShader.setUniformVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+		lightingShader.setUniformVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+		lightingShader.setUniformVec3("light.position", lightCurrentPosition);
 		lightingShader.setUniformVec3("viewPos", camera.Position);
 
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), resolution, 0.1f, 100.0f);
@@ -210,6 +262,7 @@ u8   		*data = NULL;
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		lightCubeShader.use();
+		lightCubeShader.setUniformVec3("lightColor", lightColor);
 		lightCubeShader.setUniformMat("projection", projection);
 		lightCubeShader.setUniformMat("view", view);
 
@@ -278,3 +331,35 @@ void window_scroll_callback(GLFWwindow* window, f64 xoffset, f64 yoffset) {
 	camera.ProcessMouseScroll(static_cast<f32>(yoffset));
 }
 
+static u32 loadTexture(const char *path) {
+	u32 textureId;
+	glGenTextures(1, &textureId);
+
+	s32 width, height, nrComponents;
+	u8 *data = stbi_load(path, &width, &height, &nrComponents, 0);
+
+	if(data) {
+		GLenum format;
+		if(nrComponents == 1)
+			format = GL_RED;
+		if(nrComponents == 3)
+			format = GL_RGB;
+		if(nrComponents == 4)
+			format = GL_RGBA;
+
+		glBindTexture(GL_TEXTURE_2D, textureId);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+		
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	} else {
+		glDeleteTextures(1, &textureId);
+		textureId = -1;
+	}
+	stbi_image_free(data);
+	return textureId;
+}
