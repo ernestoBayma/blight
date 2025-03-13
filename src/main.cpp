@@ -126,6 +126,19 @@ static f32 vertices[] = {
     -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
 };
 
+static glm::vec3 cubePositions[] = {
+	glm::vec3( 0.0f,  0.0f,  0.0f),
+	glm::vec3( 2.0f,  5.0f, -15.0f),
+	glm::vec3(-1.5f, -2.2f, -2.5f),
+	glm::vec3(-3.8f, -2.0f, -12.3f),
+	glm::vec3( 2.4f, -0.4f, -3.5f),
+	glm::vec3(-1.7f,  3.0f, -7.5f),
+	glm::vec3( 1.3f, -2.0f, -2.5f),
+	glm::vec3( 1.5f,  2.0f, -2.5f),
+	glm::vec3( 1.5f,  0.2f, -1.5f),
+	glm::vec3(-1.3f,  1.0f, -1.5f)
+};
+
 int main(int argc, char **argv) 
 {
 GLFWwindow 	*window;
@@ -162,7 +175,7 @@ u8   		*data = NULL;
 
 	glEnable(GL_DEPTH_TEST);
 
-	Blight::Shader lightingShader("shaders/materials_texture.vs", "shaders/materials_texture.fs");
+	Blight::Shader lightingShader("shaders/light_casters.vs", "shaders/light_casters.fs");
 	if(lightingShader.error) {
 		fprintf(stderr, "Error creating lightingShader\n");
 		return -1;
@@ -223,30 +236,15 @@ u8   		*data = NULL;
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, diffuseMap);
-
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, specularMap);
-
-		glm::vec3 lightColor = glm::vec3(1.0f);
-
-		f32 lightAngle = currentFrame * 0.5f;
-		f32 lightX     = 5.0f * cos(lightAngle);
-		f32 lightZ     = 5.0f * sin(lightAngle);
-
-		glm::vec3 lightCurrentPosition = glm::vec3(lightX, 0.0f, lightZ);
 		lightingShader.use();
-		lightingShader.setUniformVec3("material.specular", 0.5f, 0.5f, 0.5f);
-		lightingShader.setUniformFloat("material.shininess", 54.0f);
-		lightingShader.setUniformVec3("lightColor", lightColor);
+		lightingShader.setUniformVec3("light.direction", -0.2f, -1.0f, -0.3f);
+		lightingShader.setUniformVec3("viewPos", camera.Position);
 
 		lightingShader.setUniformVec3("light.ambient", 0.2f, 0.2f, 0.2f);
 		lightingShader.setUniformVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
 		lightingShader.setUniformVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
-		lightingShader.setUniformVec3("light.position", lightCurrentPosition);
-		lightingShader.setUniformVec3("viewPos", camera.Position);
+		lightingShader.setUniformFloat("material.shininess", 32.0f);
 
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), resolution, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
@@ -257,6 +255,23 @@ u8   		*data = NULL;
 		glm::mat4 model = glm::mat4(1.0f);
 		lightingShader.setUniformMat("model", model);
 
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, diffuseMap);
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, specularMap);
+
+		glBindVertexArray(cubeVAO);
+		for(u32 i = 0; i < STATIC_ARRAY_SIZE(cubePositions); i++) {
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::translate(model, cubePositions[i]);
+			f32 angle = 20.0f * i;
+			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			lightingShader.setUniformMat("model", model);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
+
+#if 0
 		//render cube 
 		glBindVertexArray(cubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -274,7 +289,7 @@ u8   		*data = NULL;
 		//render cube 
 		glBindVertexArray(lightCubeVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-
+#endif
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
